@@ -1,0 +1,64 @@
+sudo: required
+
+env:
+  global:
+    - CC_TEST_REPORTER_ID=910515cd7273349a55fdee48d849f5d53a2cabe16c23c74747d1213157512bbc
+
+language: python
+
+python:
+  - "3.6"
+
+services:
+  - docker
+
+branches:
+  only:
+  - master
+  - dev
+  - qa
+
+before_install:
+  - git clone https://github.com/ramrod-project/backend-interpreter.git
+  - if [ "$TRAVIS_BRANCH" == "master"  ]; 
+    then export TAG=latest; 
+    else export TAG=$TRAVIS_BRANCH; fi
+
+install:
+  - pip install -r requirements.txt
+  - pip install pytest-cov
+  - docker pull alpine:3.7
+  - travis_wait 10 docker pull ramrodpcp/database-brain:$TAG
+  - travis_wait 10 docker pull ramrodpcp/auxiliary-services:$TAG
+  - travis_wait 10 docker pull ramrodpcp/interpreter-plugin:$TAG
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+
+before_script:
+  - pytest --cov --cov-config .coveragerc --cov-report xml ./test
+  - ./cc-test-reporter after-build -t coverage.py --exit-code 0
+
+script:
+  - docker build -t ramrodpcp/backend-interpreter:$TAG .
+  - docker network create test
+  - docker run -d --name controller --network test -e "START_HARNESS=YES" -e "STAGE=DEV" -e "LOGLEVEL=DEBUG" -e "TRAVIS_BRANCH=$TAG"
+    -v /var/run/docker.sock:/var/run/docker.sock ramrodpcp/backend-interpreter:$TAG
+  # This will eventually be for more integration testing
+  - sleep 30
+  - docker ps -a
+  - containers=$(docker ps -a | grep -v CONTAINER | awk '{print $1}')
+  # print the logs for each plugin
+  - docker logs controller
+  - docker logs $(docker ps -a | grep interpreter-plugin | awk '{print $1}')
+  - docker logs rethinkdb
+  - docker stop controller
+
+after_success:
+  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; 
+    then echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin; fi
+  - if [[ "$TRAVIS_PULL_REQUEST" == "false"  ]]; 
+    then docker push ramrodpcp/backend-interpreter:$TAG; fi
+
+notifications:
+  slack: ramrod-project:GDF82rRYDg3KSekrT3GA24qO

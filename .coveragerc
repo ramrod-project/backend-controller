@@ -1,0 +1,11 @@
+[run]
+include = 
+    # controller package
+    *controller*
+    # server file
+    *server.py
+
+omit =
+    *venv*
+    *test*
+    *__init__.py
