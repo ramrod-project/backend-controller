@@ -42,7 +42,7 @@ before_script:
 script:
   - docker build -t ramrodpcp/backend-interpreter:$TAG .
   - docker network create test
-  - docker run -d --name controller --network test -e "START_HARNESS=YES" -e "STAGE=DEV" -e "LOGLEVEL=DEBUG" -e "TRAVIS_BRANCH=$TAG"
+  - docker run -d --name controller --network test -e "START_HARNESS=YES" -e "STAGE=DEV" -e "LOGLEVEL=DEBUG" -e "TRAVIS_BRANCH=$TRAVIS_BRANCH"
     -v /var/run/docker.sock:/var/run/docker.sock ramrodpcp/backend-interpreter:$TAG
   # This will eventually be for more integration testing
   - sleep 30
