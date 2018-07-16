@@ -16,8 +16,8 @@ CLIENT = docker.from_env()
 
 syspath.append(CONTROLLER_PATH)
 
-from ..controller import *
-from .. import server
+from controller import *
+import server
 
 
 AUX_PLUGIN = {
@@ -230,8 +230,8 @@ def test_stop_all_containers(env, controller, clean_up_containers):
         assert con.status == "created"
     controller.stop_all_containers()
     for con in containers:
-        with raises(docker.errors.NotFound):
-            con = CLIENT.containers.get(con.id)
+        con = CLIENT.containers.get(con.id)
+        assert con.status == "exited"
 
 def test_create_plugin(env, controller, rethink, brain_conn, clear_dbs, clean_up_containers):
     assert not controller.create_plugin({"Name": ""})
@@ -247,13 +247,13 @@ def test_create_plugin(env, controller, rethink, brain_conn, clear_dbs, clean_up
 
 def test_load_plugins_from_manifest(env, controller, rethink, brain_conn, clear_dbs, clean_up_containers):
     with raises(FileNotFoundError):
-        controller.load_plugins_from_manifest("./manifest.json")
-    with open("./manifest.json", "w") as outfile:
+        controller.load_plugins_from_manifest("./test-manifest.json")
+    with open("./test-manifest.json", "w") as outfile:
         dump([], outfile)
-    assert not controller.load_plugins_from_manifest("./manifest.json")
-    with open("./manifest.json", "w") as outfile:
+    assert not controller.load_plugins_from_manifest("./test-manifest.json")
+    with open("./test-manifest.json", "w") as outfile:
         dump(TEST_MANIFEST, outfile)
-    assert controller.load_plugins_from_manifest("./manifest.json")
+    assert controller.load_plugins_from_manifest("./test-manifest.json")
     db_updated = False
     now = time()
     while time() - now < 5:
@@ -297,8 +297,8 @@ def test_load_plugins_from_manifest(env, controller, rethink, brain_conn, clear_
             db_updated2 = True
             break
     assert db_updated2
-    assert not controller.load_plugins_from_manifest("./manifest.json")
-    remove("./manifest.json")
+    assert not controller.load_plugins_from_manifest("./test-manifest.json")
+    remove("./test-manifest.json")
 
 def test_create_port(env, controller, rethink, clear_dbs, brain_conn, clean_up_containers):
     assert controller._create_port(TEST_PORT_DATA)
