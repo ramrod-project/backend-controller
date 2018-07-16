@@ -368,12 +368,14 @@ def test_invalid_transitions(brain_conn, clear_dbs, env, rethink, server_proc, g
     sleep(3)
     db_not_updated3 = False
     now = time()
+    result = None
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("Harness", conn=brain_conn).next()
         if result["Name"] == "Harness" and result["State"] == "Active" and result["DesiredState"] == "":
             db_not_updated3 = True
             break
         sleep(0.5)
+    print(result)
     assert db_not_updated3
     sleep(1)
     con.stop(timeout=5)
