@@ -2,7 +2,7 @@ sudo: required
 
 env:
   global:
-    - CC_TEST_REPORTER_ID=910515cd7273349a55fdee48d849f5d53a2cabe16c23c74747d1213157512bbc
+    - CC_TEST_REPORTER_ID=13c85c2b9fbcf1b0320d87f10452b9c30cde3f0de35b24801aa99246e671cf12
 
 language: python
 
