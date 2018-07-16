@@ -113,6 +113,7 @@ def test_available_to_start(brain_conn, clear_dbs, env, rethink, server_proc, gi
             break
     assert running
     db_updated = False
+    result = None
     now = time()
     while time() - now < 3:
         sleep(0.5)
@@ -120,6 +121,7 @@ def test_available_to_start(brain_conn, clear_dbs, env, rethink, server_proc, gi
         if result["Name"] == "Harness" and result["State"] == "Active" and result["DesiredState"] == "":
             db_updated = True
             break
+    print(result)
     assert db_updated
     # check ports
 
@@ -146,6 +148,7 @@ def test_active_to_stop(brain_conn, clear_dbs, env, rethink, server_proc, give_m
             running = True
             break
     assert running
+    sleep(1)
     result = brain.queries.update_plugin_controller(
         {
             "Name": "Harness",
@@ -154,6 +157,7 @@ def test_active_to_stop(brain_conn, clear_dbs, env, rethink, server_proc, give_m
         conn=brain_conn
     )
     assert result["errors"] == 0
+    sleep(1)
     exited = False
     now = time()
     while time() - now < 15:
@@ -164,6 +168,7 @@ def test_active_to_stop(brain_conn, clear_dbs, env, rethink, server_proc, give_m
             break
     assert exited
     db_updated = False
+    result = None
     now = time()
     while time() - now < 3:
         sleep(0.5)
@@ -171,6 +176,7 @@ def test_active_to_stop(brain_conn, clear_dbs, env, rethink, server_proc, give_m
         if result["Name"] == "Harness" and result["State"] == "Stopped" and result["DesiredState"] == "":
             db_updated = True
             break
+    print(result)
     assert db_updated
 
 def test_active_to_restart(brain_conn, clear_dbs, env, rethink, server_proc, give_manifest, clean_up_containers):
@@ -205,6 +211,7 @@ def test_active_to_restart(brain_conn, clear_dbs, env, rethink, server_proc, giv
     )
     assert result["errors"] == 0
     db_updated = False
+    result = None
     now = time()
     while time() - now < 20:
         sleep(0.1)
@@ -212,8 +219,10 @@ def test_active_to_restart(brain_conn, clear_dbs, env, rethink, server_proc, giv
         if result["Name"] == "Harness" and result["State"] == "Restarting":
             db_updated = True
             break
+    print(result)
     assert db_updated
     db_updated2 = False
+    result = None
     now = time()
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("Harness", conn=brain_conn).next()
@@ -221,6 +230,7 @@ def test_active_to_restart(brain_conn, clear_dbs, env, rethink, server_proc, giv
             db_updated2 = True
             break
         sleep(0.5)
+    print(result)
     assert db_updated2
     con.stop(timeout=1)
     con.remove(force=True)
@@ -286,6 +296,7 @@ def test_stopped_to_activate(brain_conn, clear_dbs, env, rethink, server_proc, g
             break
     assert started
     db_updated = False
+    result = None
     now = time()
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("Harness", conn=brain_conn).next()
@@ -293,6 +304,7 @@ def test_stopped_to_activate(brain_conn, clear_dbs, env, rethink, server_proc, g
             db_updated = True
             break
         sleep(0.5)
+    print(result)
     assert db_updated
 
 def test_invalid_transitions(brain_conn, clear_dbs, env, rethink, server_proc, give_manifest, clean_up_containers):
@@ -318,6 +330,7 @@ def test_invalid_transitions(brain_conn, clear_dbs, env, rethink, server_proc, g
             db_not_updated = True
             break
         sleep(0.5)
+    print(result)
     assert db_not_updated
     sleep(1)
     result = brain.queries.update_plugin_controller(
@@ -338,6 +351,7 @@ def test_invalid_transitions(brain_conn, clear_dbs, env, rethink, server_proc, g
             db_not_updated2 = True
             break
         sleep(0.5)
+    print(result)
     assert db_not_updated2
     con = server.PLUGIN_CONTROLLER.launch_plugin({
         "Name": "Harness",
@@ -346,7 +360,7 @@ def test_invalid_transitions(brain_conn, clear_dbs, env, rethink, server_proc, g
         "ExternalPort": ["".join((str(5000), "/tcp"))],
         "InternalPort": ["".join((str(5000), "/tcp"))]
     })
-    running = False
+    result = None
     now = time()
     while time() - now < 10:
         sleep(0.5)
@@ -368,12 +382,14 @@ def test_invalid_transitions(brain_conn, clear_dbs, env, rethink, server_proc, g
     sleep(3)
     db_not_updated3 = False
     now = time()
+    result = None
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("Harness", conn=brain_conn).next()
         if result["Name"] == "Harness" and result["State"] == "Active" and result["DesiredState"] == "":
             db_not_updated3 = True
             break
         sleep(0.5)
+    print(result)
     assert db_not_updated3
     sleep(1)
     con.stop(timeout=5)
@@ -396,6 +412,7 @@ def test_invalid_transitions(brain_conn, clear_dbs, env, rethink, server_proc, g
             break
     assert exited
     db_updated = False
+    print(result)
     now = time()
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("Harness", conn=brain_conn).next()
@@ -403,6 +420,7 @@ def test_invalid_transitions(brain_conn, clear_dbs, env, rethink, server_proc, g
             db_updated = True
             break
         sleep(0.5)
+    print(result)
     assert db_updated
     sleep(1)
     result = brain.queries.update_plugin_controller(
@@ -415,6 +433,7 @@ def test_invalid_transitions(brain_conn, clear_dbs, env, rethink, server_proc, g
     assert result["errors"] == 0
     sleep(3)
     db_not_updated4 = False
+    result = None
     now = time()
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("Harness", conn=brain_conn).next()
@@ -422,6 +441,7 @@ def test_invalid_transitions(brain_conn, clear_dbs, env, rethink, server_proc, g
             db_not_updated4 = True
             break
         sleep(0.5)
+    print(result)
     assert db_not_updated4
     sleep(1)
 
@@ -452,6 +472,7 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
             break
     assert running
     db_updated = False
+    result = None
     now = time()
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("AuxiliaryServices", conn=brain_conn).next()
@@ -459,6 +480,7 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
             db_updated = True
             break
         sleep(0.5)
+    print(result)
     assert db_updated
     sleep(1)
     result = brain.queries.update_plugin_controller(
@@ -469,7 +491,9 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
         conn=brain_conn
     )
     assert result["errors"] == 0
+    sleep(1)
     db_updated_desired = False
+    result = None
     now = time()
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("AuxiliaryServices", conn=brain_conn).next()
@@ -477,8 +501,11 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
             db_updated_desired = True
             break
         sleep(0.1)
+    print(result)
     assert db_updated_desired
+    sleep(1)
     db_updated2 = False
+    result = None
     now = time()
     while time() - now < 20:
         sleep(0.1)
@@ -486,8 +513,11 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
         if result["Name"] == "AuxiliaryServices" and result["State"] == "Restarting":
             db_updated2 = True
             break
+    print(result)
     assert db_updated2
+    sleep(1)
     db_updated3 = False
+    result = None
     now = time()
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("AuxiliaryServices", conn=brain_conn).next()
@@ -495,6 +525,7 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
             db_updated3 = True
             break
         sleep(0.5)
+    print(result)
     assert db_updated3
     sleep(1)
     result = brain.queries.update_plugin_controller(
@@ -505,7 +536,9 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
         conn=brain_conn
     )
     assert result["errors"] == 0
+    sleep(1)
     db_updated_desired2 = False
+    result = None
     now = time()
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("AuxiliaryServices", conn=brain_conn).next()
@@ -513,8 +546,11 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
             db_updated_desired2 = True
             break
         sleep(0.1)
+    print(result)
     assert db_updated_desired2
+    sleep(1)
     exited = False
+    result = None
     now = time()
     while time() - now < 15:
         sleep(0.5)
@@ -522,8 +558,11 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
         if con.status == "exited":
             exited = True
             break
+    print(result)
     assert exited
+    sleep(1)
     db_updated4 = False
+    result = None
     now = time()
     while time() - now < 12:
         result = brain.queries.get_plugin_by_name_controller("AuxiliaryServices", conn=brain_conn).next()
@@ -531,5 +570,6 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
             db_updated4 = True
             break
         sleep(0.5)
+    print(result)
     assert db_updated4
     sleep(1)
