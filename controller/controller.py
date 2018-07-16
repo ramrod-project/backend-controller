@@ -484,14 +484,12 @@ class Controller():
         for container in self.get_all_containers():
             try:
                 container.stop(timeout=5)
-                container.remove(force=True)
             except docker.errors.NotFound:
                 pass
         if environ["STAGE"] == "DEV":  # pragma: no cover
             try:
                 rdb = CLIENT.containers.get("rethinkdb")
                 rdb.stop(timeout=10)
-                rdb.remove(force=True)
             except docker.errors.NotFound:
                 pass
             self.log(
