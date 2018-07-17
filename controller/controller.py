@@ -114,7 +114,7 @@ class Controller():
         Returns:
             {list} -- the content of the manifest file.
         """
-        manifest_content
+        manifest_content = []
         with open(manifest, "r") as readfile:
             manifest_content = load(readfile)
         if not isinstance(manifest_content, list) or \
