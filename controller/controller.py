@@ -140,7 +140,7 @@ class Controller():
                 AUX_SERVICES_IMAGE,
                 self.tag
             ]))
-            return True
+            return self.create_plugin(AUX_PLUGIN)
         except docker.errors.ImageNotFound:
             self._check_db_errors({
                 "errors": 1,
@@ -160,9 +160,10 @@ class Controller():
         Returns:
             {bool} -- True - succeeded, False - failed.
         """
+        self.check_aux_image()
         manifest_loaded = self.read_manifest(manifest)
-        if self.check_aux_image():
-            manifest_loaded.append(AUX_PLUGIN)
+        if manifest_loaded == []:
+            return False
         for plugin in manifest_loaded:
             if not self.create_plugin({
                 "Name": plugin["Name"],
