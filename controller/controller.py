@@ -101,6 +101,53 @@ class Controller():
             return False
         return True
 
+    def read_manifest(self, manifest):
+        """Read manifest.json file
+
+        Returns the content of the manifest file
+        if readable, otherwise returns empty
+        list.
+
+        Arguments:
+            manifest {str} -- filename for manifest.
+
+        Returns:
+            {list} -- the content of the manifest file.
+        """
+        manifest_content
+        with open(manifest, "r") as readfile:
+            manifest_content = load(readfile)
+        if not isinstance(manifest_content, list) or \
+               len(manifest_content) == 0:
+            self._check_db_errors({
+                "errors": 1,
+                "first_error": "No plugins found in manifest!"
+            })
+            return []
+        return manifest_content
+
+    def check_aux_image(self):
+        """Check if auxiliary image available
+
+        Checks to see if the auxiliary services
+        plugin image is available.
+
+        Returns:
+            {bool} -- True - available, False - not.
+        """
+        try:
+            CLIENT.images.get("".join([
+                AUX_SERVICES_IMAGE,
+                self.tag
+            ]))
+            return True
+        except docker.errors.ImageNotFound:
+            self._check_db_errors({
+                "errors": 1,
+                "first_error": "Auxiliary plugin not available!"
+            })
+        return False
+
     def load_plugins_from_manifest(self, manifest):
         """Load plugins into db from manifest.json
 
@@ -113,26 +160,9 @@ class Controller():
         Returns:
             {bool} -- True - succeeded, False - failed.
         """
-        manifest_loaded = []
-        with open(manifest, "r") as readfile:
-            manifest_loaded = load(readfile)
-        if len(manifest_loaded) == 0:
-            return self._check_db_errors({
-                "errors": 1,
-                "first_error": "No plugins found in manifest!"
-            })
-        try:
-            CLIENT.images.get("".join([
-                AUX_SERVICES_IMAGE,
-                self.tag
-            ]))
-            if not self.create_plugin(AUX_PLUGIN):
-                return False
-        except docker.errors.ImageNotFound:
-            self._check_db_errors({
-                "errors": 1,
-                "first_error": "Auxiliary plugin not available!"
-            })
+        manifest_loaded = self.read_manifest(manifest)
+        if self.check_aux_image():
+            manifest_loaded.append(AUX_PLUGIN)
         for plugin in manifest_loaded:
             if not self.create_plugin({
                 "Name": plugin["Name"],
@@ -239,6 +269,22 @@ class Controller():
             return False
         sleep(3)
         return True
+
+    def dev_db_stop(self):
+        """Stop the dev database
+    
+        Stop dev db and clean up networks.
+        """
+        try:
+            rdb = CLIENT.containers.get("rethinkdb")
+            rdb.stop(timeout=10)
+        except docker.errors.NotFound:
+            pass
+        self.log(
+            20,
+            "Pruning networks..."
+        )
+        CLIENT.networks.prune()
 
     def log(self, level, message):
         """Log a message
@@ -487,16 +533,7 @@ class Controller():
             except docker.errors.NotFound:
                 pass
         if environ["STAGE"] == "DEV":  # pragma: no cover
-            try:
-                rdb = CLIENT.containers.get("rethinkdb")
-                rdb.stop(timeout=10)
-            except docker.errors.NotFound:
-                pass
-            self.log(
-                20,
-                "Pruning networks..."
-            )
-            CLIENT.networks.prune()
+            self.dev_db_stop()
 
     def get_container_from_name(self, plugin_name, timeout=1):
         """Return a container object given a plugin name.
