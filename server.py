@@ -199,27 +199,28 @@ def to_log(log, level):
     )
 
 
-def main():
-    """Main server entry point
+def check_dev_env():
+    """Checks if in a DEV environment
+
+    Launches a database container if in
+    a dev environment.
     """
-    def sigterm_handler(_signo, _stack_frame):
-        """Handles SIGTERM signal
-        """
-        PLUGIN_CONTROLLER.stop_all_containers()
-        exit(0)
-
-    signal(SIGTERM, sigterm_handler)
-
     if environ["STAGE"] == "DEV" and not PLUGIN_CONTROLLER.dev_db():  # pragma: no cover
-        PLUGIN_CONTROLLER.log(
-            40,
+        to_log(
             "Port 28015 already allocated, \
-            cannot launch rethinkdb container!"
+            cannot launch rethinkdb container!",
+            50
         )
         exit(1)
 
-    PLUGIN_CONTROLLER.load_plugins_from_manifest(MANIFEST_FILE)
 
+def check_harness():
+    """Checks if Harness should start
+
+    Starts the Harness plugin if the
+    START_HARNESS environment variable is
+    set to YES.
+    """
     if START_HARNESS == "YES":  # pragma: no cover
         port = "".join([
             str(HARNESS_PORT),
@@ -234,6 +235,22 @@ def main():
             "ExternalPort": [port],
             "InternalPort": [port]
         })
+
+
+def sigterm_handler(_signo, _stack_frame):
+    """Handles SIGTERM signal
+    """
+    PLUGIN_CONTROLLER.stop_all_containers()
+    exit(0)
+
+
+def main():
+    """Main server entry point
+    """
+    signal(SIGTERM, sigterm_handler)
+    check_dev_env()
+    PLUGIN_CONTROLLER.load_plugins_from_manifest(MANIFEST_FILE)
+    check_harness()
 
     brain_connection = connect(host=RETHINK_HOST)
 
