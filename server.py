@@ -221,21 +221,22 @@ def check_harness():
     START_HARNESS environment variable is
     set to YES.
     """
-    if START_HARNESS == "YES":  # pragma: no cover
+    if START_HARNESS == "YES":
         port = "".join([
             str(HARNESS_PORT),
             "/",
             HARNESS_PROTO.lower()
         ])
-        PLUGIN_CONTROLLER.launch_plugin({
+        harness_plugin_data = {
             "Name": HARNESS_PLUGIN,
             "State": "Available",
             "DesiredState": "",
             "Interface": "",
             "ExternalPort": [port],
             "InternalPort": [port]
-        })
-
+        }
+        PLUGIN_CONTROLLER.create_plugin(harness_plugin_data)
+        PLUGIN_CONTROLLER.launch_plugin(harness_plugin_data)
 
 def sigterm_handler(_signo, _stack_frame):
     """Handles SIGTERM signal
