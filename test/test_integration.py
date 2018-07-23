@@ -27,7 +27,7 @@ def server_proc():
     server.PLUGIN_CONTROLLER.rethink_host = "localhost"
     server.PLUGIN_CONTROLLER.network_name = "test"
     server.MANIFEST_FILE = "./test-manifest.json"
-    server.PLUGIN_CONTROLLER.tag = environ["TRAVIS_BRANCH"]
+    server.PLUGIN_CONTROLLER.tag = environ.get("TRAVIS_BRANCH", "dev").replace("master", "latest")
     proc = Process(target=server.main)
     yield proc
     try:
