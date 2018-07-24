@@ -1,0 +1,10 @@
+*.idea*
+*.pyc
+*venv*
+*.vscode*
+*__pycache__*
+*.pytest*
+*logfile*
+.coverage
+coverage.xml
+cc-test-reporter
