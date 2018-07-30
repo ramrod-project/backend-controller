@@ -8,3 +8,4 @@
 .coverage
 coverage.xml
 cc-test-reporter
+pytest-results.log

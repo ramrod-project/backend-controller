@@ -49,7 +49,7 @@ def server_proc_harness():
     server.PLUGIN_CONTROLLER.rethink_host = "localhost"
     server.PLUGIN_CONTROLLER.network_name = "test"
     server.MANIFEST_FILE = "./test-manifest.json"
-    server.PLUGIN_CONTROLLER.tag = environ["TRAVIS_BRANCH"]
+    server.PLUGIN_CONTROLLER.tag = TAG
     proc = Process(target=server.main)
     yield proc
     try:

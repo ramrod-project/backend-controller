@@ -139,10 +139,12 @@ def handle_state_change(plugin_data):
     Returns:
         {bool} -- True if success, False if failure.
     """
+    to_log("Entering state change: {}".format(plugin_data), 10)
     current_state = STATE_MAPPING[plugin_data["State"]]
     desired_state = plugin_data["DesiredState"]
     success = False
     try:
+        to_log("Running: {} on {}".format(current_state[desired_state], plugin_data), 10)
         if current_state[desired_state](plugin_data):
             success = True
     except KeyError:
@@ -153,7 +155,10 @@ def handle_state_change(plugin_data):
             ),
             40
         )
+    if success:
+        to_log("State change succesful!: {}".format(plugin_data), 10)
     plugin_data["DesiredState"] = ""
+    to_log("Updating: {}".format(plugin_data), 10)
     PLUGIN_CONTROLLER.update_plugin(plugin_data)
     return success
 
@@ -170,6 +175,7 @@ def check_states(cursor):
         desired = plugin_data["DesiredState"]
         if desired == "":
             continue
+        to_log("{} state change detected: {} to {}".format(plugin_data["Name"], actual, desired), 10)
         if not handle_state_change(plugin_data):
             to_log(
                 "{}: transition to {} from {} failed!".format(
