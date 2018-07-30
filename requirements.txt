@@ -14,7 +14,7 @@ py==1.5.3
 pytest==3.5.0
 pytest-cov==2.5.1
 python-magic==0.4.15
-ramrodbrain>==0.1.45
+ramrodbrain==0.1.45
 requests==2.18.4
 rethinkdb==2.3.0.post6
 six==1.11.0
