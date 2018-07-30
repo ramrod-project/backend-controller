@@ -1,6 +1,6 @@
 from json import dump, load
 import logging
-from os import environ, getenv, path, remove
+from os import environ, path, remove
 from sys import path as syspath, stderr
 from threading import Thread
 from time import sleep, time
@@ -13,6 +13,7 @@ CONTROLLER_PATH = path.join(
     "/".join(path.abspath(__file__).split("/")[:-2])
 )
 CLIENT = docker.from_env()
+TAG = environ.get("TAG", "dev")
 
 syspath.append(CONTROLLER_PATH)
 
@@ -120,11 +121,6 @@ def env():
     """
     environ["STAGE"] = "TESTING"
     environ["LOGLEVEL"] = "DEBUG"
-    try:
-        if environ["TRAVIS_BRANCH"] not in ["dev", "qa", "master"]:
-            stderr.write("TRAVIS_BRANCH must be set to dev|qa|master!\n")
-    except KeyError:
-        environ["TRAVIS_BRANCH"] = "dev"
     yield
     environ["STAGE"] = ""
     environ["LOGLEVEL"] = ""
@@ -148,9 +144,8 @@ def plugin_monitor():
 def rethink():
     # Setup for all module tests
     docker_net_create()
-    tag = getenv("TRAVIS_BRANCH", "dev").replace("master", "latest")
     con = give_a_container(
-        image="".join(("ramrodpcp/database-brain:", tag)),
+        image="".join(("ramrodpcp/database-brain:", TAG)),
         name="rethinkdb",
         ports={"28015/tcp": 28015}
     )
@@ -185,7 +180,7 @@ def container():
 def controller():
     """Give a Controller
     """
-    cont = Controller("test", getenv("TRAVIS_BRANCH", "dev").replace("master", "latest"))
+    cont = Controller("test", TAG)
     cont.rethink_host = "localhost"
     return cont
 
@@ -467,7 +462,7 @@ def test_handle_state_change(env, controller, rethink, clear_dbs, brain_conn, cl
     """
     server.PLUGIN_CONTROLLER.rethink_host = "localhost"
     server.PLUGIN_CONTROLLER.network_name = "test"
-    server.PLUGIN_CONTROLLER.tag = environ["TRAVIS_BRANCH"]
+    server.PLUGIN_CONTROLLER.tag = TAG
     # --- Start a plugin
     result = brain.queries.create_plugin_controller(
         {
@@ -521,7 +516,7 @@ def test_check_states(env, controller, rethink, clear_dbs, brain_conn, clean_up_
     and updating as necessary"""
     server.PLUGIN_CONTROLLER.rethink_host = "localhost"
     server.PLUGIN_CONTROLLER.network_name = "test"
-    server.PLUGIN_CONTROLLER.tag = environ["TRAVIS_BRANCH"]
+    server.PLUGIN_CONTROLLER.tag = TAG
     result = brain.queries.create_plugin_controller(
         {
             "Name": "Harness",
