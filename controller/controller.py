@@ -362,13 +362,20 @@ class Controller():
             "STAGE": environ["STAGE"],
             "LOGLEVEL": environ["LOGLEVEL"]
         }
+        cap_add = []
+        devices = []
+        security_opt = []
         volumes = {}
         ports_config = self._get_ports_config(plugin_data)
         # ---Right now only one port mapping per plugin is supported---
         # ---hence the internal_ports[0].                           ---
         if plugin_data["Name"] == AUX_SERVICES_NAME:
+            cap_add = ["SYS_ADMIN"]
+            devices = ["/dev/fuse:/dev/fuse"]
+            security_opt = ["apparmor:unconfined"]
             image_name = AUX_SERVICES_IMAGE
             try:
+                # docker run -ti --rm --cap-add SYS_ADMIN --device /dev/fuse --security-opt apparmor:unconfined danfusetest
                 CLIENT.volumes.get("brain-volume")
                 volumes = {
                     "brain-volume": {"bind": "/www/files/brain", "mode": "ro"}
@@ -386,10 +393,13 @@ class Controller():
         con = CLIENT.containers.run(
             "".join((image_name, self.tag)),
             name=plugin_data["Name"],
+            cap_add=cap_add,
+            devices=devices,
             environment=environment,
             detach=True,
             network=self.network_name,
             ports=ports_config,
+            security_opt=security_opt,
             volumes=volumes
         )
         if self.wait_for_plugin(plugin_data):
