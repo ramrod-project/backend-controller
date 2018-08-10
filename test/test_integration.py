@@ -36,6 +36,27 @@ def server_proc():
     except Exception as ex:
         print(ex)
 
+@fixture(scope="function")
+def server_proc_harness():
+    """Give a server Process
+
+    Returns:
+        {multiprocessing.Process} -- controller's main loop,
+        not started yet.
+    """
+    server.START_HARNESS = "YES"
+    server.RETHINK_HOST = "localhost"
+    server.PLUGIN_CONTROLLER.rethink_host = "localhost"
+    server.PLUGIN_CONTROLLER.network_name = "test"
+    server.MANIFEST_FILE = "./test-manifest.json"
+    server.PLUGIN_CONTROLLER.tag = TAG
+    proc = Process(target=server.main)
+    yield proc
+    try:
+        proc.terminate()
+    except Exception as ex:
+        print(ex)
+
 @fixture(scope="module")
 def give_manifest():
     """Give a plugin manifest
@@ -574,3 +595,31 @@ def test_auxiliary(brain_conn, clear_dbs, env, rethink, server_proc, give_manife
     print(result)
     assert db_updated4
     sleep(1)
+
+def test_harness(brain_conn, clear_dbs, env, rethink, server_proc_harness, give_manifest, clean_up_containers):
+    """Test stopping a running plugin.
+    """
+    server_proc_harness.start()
+    sleep(3)
+    running = False
+    now = time()
+    while time() - now < 10:
+        sleep(0.5)
+        con = server.PLUGIN_CONTROLLER.get_container_from_name("Harness")
+        if not con:
+            continue
+        if con.status == "running":
+            running = True
+            break
+    assert running
+    db_updated = False
+    result = None
+    now = time()
+    while time() - now < 12:
+        result = brain.queries.get_plugin_by_name_controller("Harness", conn=brain_conn).next()
+        if result["Name"] == "Harness" and result["State"] == "Active" and result["DesiredState"] == "":
+            db_updated = True
+            break
+        sleep(0.5)
+    print(result)
+    assert db_updated
