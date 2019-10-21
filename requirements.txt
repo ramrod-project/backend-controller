@@ -18,5 +18,5 @@ ramrodbrain==0.1.45
 requests==2.18.4
 rethinkdb==2.3.0.post6
 six==1.11.0
-urllib3==1.22
+urllib3==1.24.2
 websocket-client==0.47.0
